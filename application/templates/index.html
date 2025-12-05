@@ -8,22 +8,27 @@
         {{ form.hidden_tag() }}
 
         <div class="mb-3">
-            {{ form.city.label }}  
+            {{ form.city.label }}
             {{ form.city(class="form-select") }}
         </div>
 
         <div class="mb-3">
-            {{ form.area_in_sqft.label }}  
+            {{ form.location.label }}
+            {{ form.location(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.area_in_sqft.label }}
             {{ form.area_in_sqft(class="form-control") }}
         </div>
 
         <div class="mb-3">
-            {{ form.beds.label }}  
+            {{ form.beds.label }}
             {{ form.beds(class="form-control") }}
         </div>
 
         <div class="mb-3">
-            {{ form.baths.label }}  
+            {{ form.baths.label }}
             {{ form.baths(class="form-control") }}
         </div>
 
@@ -46,6 +51,14 @@
             Predict Rent
         </button>
     </form>
+
+    {% if prediction %}
+    <div class="alert alert-success mt-4">
+        <h5>Predicted Annual Rent:</h5>
+        <p class="fw-bold text-primary">AED {{ prediction | round(2) }}</p>
+    </div>
+    {% endif %}
+
 </div>
 
 {% endblock %}
