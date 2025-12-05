@@ -4,7 +4,7 @@
 <div class="container mt-5">
     <h2 class="text-center mb-4">UAE Rental Price Prediction</h2>
 
-    <form method="POST" action="">
+    <form method="POST" action="{{ url_for('predict') }}">
         {{ form.hidden_tag() }}
 
         <div class="mb-3">
