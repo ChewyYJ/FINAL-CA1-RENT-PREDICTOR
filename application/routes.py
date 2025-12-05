@@ -1,20 +1,12 @@
 from application import app
-from flask import render_template 
+from flask import render_template
+from application.forms import PredictionForm
 
-@app.route("/")
-@app.route("/index")
-@app.route("/home")
+@app.route("/", methods=["GET", "POST"])
 def index_page():
- 
+    form = PredictionForm()
     return render_template(
         "index.html",
+        form=form,
         title="Enter Property Details"
     )
-
-@app.route("/predict", methods=["GET", "POST"])
-def predict():
-    pass
-
-@app.route("/history")
-def history():
-    pass

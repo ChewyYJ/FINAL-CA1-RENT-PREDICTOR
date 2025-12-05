@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">UAE Rental Price Prediction</h2>
+
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+            {{ form.city.label }}  
+            {{ form.city(class="form-select") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.area_in_sqft.label }}  
+            {{ form.area_in_sqft(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.beds.label }}  
+            {{ form.beds(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.baths.label }}  
+            {{ form.baths(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.furnishing.label }}
+            {{ form.furnishing(class="form-select") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.type.label }}
+            {{ form.type(class="form-select") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.age_of_listing_in_days.label }}
+            {{ form.age_of_listing_in_days(class="form-control") }}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+            Predict Rent
+        </button>
+    </form>
+</div>
+
+{% endblock %}
