@@ -1,11 +1,9 @@
 # load the model and preprocessing objects
 import os
-import pickle
+import joblib  # ← Changed from pickle to joblib
 import numpy as np
 import pandas as pd
 from flask import current_app
-import lzma
- 
 
 # Global variables to store loaded components
 _model = None
@@ -31,22 +29,23 @@ def load_model_components():
 
         print("Loading model components from:", MODEL_DIR)
 
-        # -------- Load ONLY compressed model --------
-        model_path = os.path.join(MODEL_DIR, "best_model_compressed_lzma.pkl")
+        # -------- Load model with joblib --------
+        model_path = os.path.join(MODEL_DIR, "best_model.pkl")  # ← Use regular model, not compressed
 
         if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Compressed model file not found: {model_path}")
+            raise FileNotFoundError(f"Model file not found: {model_path}")
 
-        with lzma.open(model_path, "rb") as f:
-            _model = pickle.load(f)
-
-        print("Loaded COMPRESSED model from:", model_path)
-        _scaler = pickle.load(open(os.path.join(MODEL_DIR, "scaler.pkl"), "rb"))
-        _encoder = pickle.load(open(os.path.join(MODEL_DIR, "encoder.pkl"), "rb"))
-        _categorical_cols = pickle.load(open(os.path.join(MODEL_DIR, "categorical_cols.pkl"), "rb"))
-        _continuous_cols = pickle.load(open(os.path.join(MODEL_DIR, "continuous_cols.pkl"), "rb"))
-        _feature_columns = pickle.load(open(os.path.join(MODEL_DIR, "feature_columns.pkl"), "rb"))
-        _furnish_map = pickle.load(open(os.path.join(MODEL_DIR, "furnish_map.pkl"), "rb"))
+        # Load with joblib (handles compatibility better)
+        _model = joblib.load(model_path)
+        print("✓ Loaded model from:", model_path)
+        
+        # Load all other components with joblib
+        _scaler = joblib.load(os.path.join(MODEL_DIR, "scaler.pkl"))
+        _encoder = joblib.load(os.path.join(MODEL_DIR, "encoder.pkl"))
+        _categorical_cols = joblib.load(os.path.join(MODEL_DIR, "categorical_cols.pkl"))
+        _continuous_cols = joblib.load(os.path.join(MODEL_DIR, "continuous_cols.pkl"))
+        _feature_columns = joblib.load(os.path.join(MODEL_DIR, "feature_columns.pkl"))
+        _furnish_map = joblib.load(os.path.join(MODEL_DIR, "furnish_map.pkl"))
         
         print("✓ All model components loaded successfully!")
         
