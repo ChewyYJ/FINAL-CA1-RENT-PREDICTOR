@@ -41,10 +41,10 @@
 
                 <!-- History -->
                 <li class="nav-item">
-                    <a class="nav-link"
-                       href="{{ url_for('index_page', _anchor='history-card') }}">
-                        <i class="bi bi-clock-history me-2"></i>History
-                    </a>
+                <a class="nav-link {% if request.endpoint == 'history' %}active{% endif %}"
+                                    href="{{ url_for('history') }}">
+                                    History
+                </a>
                 </li>
             </ul>
         </div>

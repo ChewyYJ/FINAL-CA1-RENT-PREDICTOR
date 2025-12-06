@@ -1,0 +1,473 @@
+{% extends "layout.html" %}
+
+{% block title %}Prediction History{% endblock %}
+
+{% block content %}
+
+<div class="history-page-wrapper">
+    <!-- PAGE HEADER -->
+    <div class="mb-5">
+        <div class="text-center mb-4">
+            <h1 class="display-5 fw-bold mb-2" style="color: var(--primary-teal-darker);">
+                Prediction History
+            </h1>
+            <p class="text-muted fs-5">View and manage your past rental predictions</p>
+        </div>
+
+        <!-- STATS CARDS - MINIMAL -->
+        {% if entries %}
+        <div class="d-flex justify-content-center gap-4 mb-4">
+            <div class="stat-minimal">
+                <div class="stat-minimal-value">{{ pagination.total }}</div>
+                <div class="stat-minimal-label">Total</div>
+            </div>
+            <div class="stat-minimal-divider"></div>
+            <div class="stat-minimal">
+                <div class="stat-minimal-value">{{ entries|length }}</div>
+                <div class="stat-minimal-label">This Page</div>
+            </div>
+            <div class="stat-minimal-divider"></div>
+            <div class="stat-minimal">
+                <div class="stat-minimal-value">8</div>
+                <div class="stat-minimal-label">Cities</div>
+            </div>
+            <div class="stat-minimal-divider"></div>
+            <div class="stat-minimal">
+                <div class="stat-minimal-value">{{ pagination.page }}</div>
+                <div class="stat-minimal-label">Page</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- FILTERS -->
+    <form method="get" class="mb-4">
+        <div class="card border-0 shadow-sm glass-card">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
+                <button
+                    class="btn btn-filter-gradient"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#historyFilters"
+                    aria-expanded="false"
+                >
+                    <i class="bi bi-funnel-fill me-2"></i>Filters & Sort
+                    <i class="bi bi-chevron-down ms-2"></i>
+                </button>
+
+                <div class="d-flex gap-2 align-items-center">
+                    <a href="{{ url_for('history') }}" class="btn btn-outline-secondary rounded-pill">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Reset
+                    </a>
+                </div>
+            </div>
+
+            <!-- Collapsible filter body -->
+            <div class="collapse" id="historyFilters">
+                <div class="card-body" style="background: rgba(91, 155, 173, 0.03);">
+                    
+                    <!-- SORT CONTROLS AT TOP -->
+                    <div class="row g-3 mb-4 pb-3 border-bottom">
+                        <div class="col-12">
+                            <h6 class="text-uppercase fw-bold mb-3" style="color: var(--primary-teal-darker); font-size: 0.9rem; letter-spacing: 0.05em;">
+                                <i class="bi bi-sort-down me-2"></i>Sort Options
+                            </h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-funnel me-1"></i>Sort by
+                            </label>
+                            <select name="sort_by" class="form-select">
+                                <option value="created_at" {{ 'selected' if sort_by == 'created_at' }}>Date Created</option>
+                                <option value="rent" {{ 'selected' if sort_by == 'rent' }}>Rent Amount</option>
+                                <option value="area" {{ 'selected' if sort_by == 'area' }}>Area (sqft)</option>
+                                <option value="beds" {{ 'selected' if sort_by == 'beds' }}>Bedrooms</option>
+                                <option value="city" {{ 'selected' if sort_by == 'city' }}>City</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-arrow-down-up me-1"></i>Order
+                            </label>
+                            <select name="order" class="form-select">
+                                <option value="desc" {{ 'selected' if order == 'desc' }}>Descending</option>
+                                <option value="asc" {{ 'selected' if order == 'asc' }}>Ascending</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- FILTER CONTROLS -->
+                    <div class="mb-3">
+                        <h6 class="text-uppercase fw-bold mb-3" style="color: var(--primary-teal-darker); font-size: 0.9rem; letter-spacing: 0.05em;">
+                            <i class="bi bi-sliders me-2"></i>Filter Options
+                        </h6>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <!-- City Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-geo-alt me-1" style="color: var(--primary-teal);"></i>City
+                            </label>
+                            <select name="city" class="form-select">
+                                <option value="all" {{ 'selected' if city_filter == 'all' }}>All Cities</option>
+                                <option value="Dubai" {{ 'selected' if city_filter == 'Dubai' }}>Dubai</option>
+                                <option value="Abu Dhabi" {{ 'selected' if city_filter == 'Abu Dhabi' }}>Abu Dhabi</option>
+                                <option value="Sharjah" {{ 'selected' if city_filter == 'Sharjah' }}>Sharjah</option>
+                                <option value="Ajman" {{ 'selected' if city_filter == 'Ajman' }}>Ajman</option>
+                                <option value="Ras Al Khaimah" {{ 'selected' if city_filter == 'Ras Al Khaimah' }}>Ras Al Khaimah</option>
+                                <option value="Umm Al Quwain" {{ 'selected' if city_filter == 'Umm Al Quwain' }}>Umm Al Quwain</option>
+                                <option value="Al Ain" {{ 'selected' if city_filter == 'Al Ain' }}>Al Ain</option>
+                            </select>
+                        </div>
+
+                        <!-- Location Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-pin-map me-1" style="color: var(--primary-teal);"></i>Location
+                            </label>
+                            <input type="text" name="location" class="form-control" 
+                                placeholder="e.g., Khalifa City" 
+                                value="{{ location_filter or '' }}">
+                        </div>
+
+                        <!-- Property Type Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-house-door me-1" style="color: var(--primary-teal);"></i>Property Type
+                            </label>
+                            <select name="property_type" class="form-select">
+                                <option value="all" {{ 'selected' if type_filter == 'all' }}>All Types</option>
+                                <option value="Apartment" {{ 'selected' if type_filter == 'Apartment' }}>Apartment</option>
+                                <option value="Hotel Apartment" {{ 'selected' if type_filter == 'Hotel Apartment' }}>Hotel Apartment</option>
+                                <option value="Penthouse" {{ 'selected' if type_filter == 'Penthouse' }}>Penthouse</option>
+                                <option value="Townhouse" {{ 'selected' if type_filter == 'Townhouse' }}>Townhouse</option>
+                                <option value="Villa" {{ 'selected' if type_filter == 'Villa' }}>Villa</option>
+                                <option value="Villa Compound" {{ 'selected' if type_filter == 'Villa Compound' }}>Villa Compound</option>
+                            </select>
+                        </div>
+
+                        <!-- Furnishing Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-lamp me-1" style="color: var(--primary-teal);"></i>Furnishing
+                            </label>
+                            <select name="furnishing" class="form-select">
+                                <option value="all" {{ 'selected' if furnishing_filter == 'all' }}>All</option>
+                                <option value="Furnished" {{ 'selected' if furnishing_filter == 'Furnished' }}>Furnished</option>
+                                <option value="Unfurnished" {{ 'selected' if furnishing_filter == 'Unfurnished' }}>Unfurnished</option>
+                            </select>
+                        </div>
+
+                        <!-- Beds Range -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-door-closed me-1" style="color: var(--primary-teal);"></i>Bedrooms
+                            </label>
+                            <div class="input-group">
+                                <input type="number" name="min_beds" class="form-control" 
+                                    placeholder="Min" min="0" value="{{ min_beds if min_beds is not none }}">
+                                <span class="input-group-text">–</span>
+                                <input type="number" name="max_beds" class="form-control" 
+                                    placeholder="Max" min="0" value="{{ max_beds if max_beds is not none }}">
+                            </div>
+                        </div>
+
+                        <!-- Baths Range -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-droplet me-1" style="color: var(--primary-teal);"></i>Bathrooms
+                            </label>
+                            <div class="input-group">
+                                <input type="number" name="min_baths" class="form-control" 
+                                    placeholder="Min" min="0" value="{{ min_baths if min_baths is not none }}">
+                                <span class="input-group-text">–</span>
+                                <input type="number" name="max_baths" class="form-control" 
+                                    placeholder="Max" min="0" value="{{ max_baths if max_baths is not none }}">
+                            </div>
+                        </div>
+
+                        <!-- Area Range -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-rulers me-1" style="color: var(--primary-teal);"></i>Area (sqft)
+                            </label>
+                            <div class="input-group">
+                                <input type="number" name="min_area" class="form-control" 
+                                    placeholder="Min" value="{{ min_area if min_area is not none }}">
+                                <span class="input-group-text">–</span>
+                                <input type="number" name="max_area" class="form-control" 
+                                    placeholder="Max" value="{{ max_area if max_area is not none }}">
+                            </div>
+                        </div>
+
+                        <!-- Age of Listing Range -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-calendar-event me-1" style="color: var(--primary-teal);"></i>Listing Age (days)
+                            </label>
+                            <div class="input-group">
+                                <input type="number" name="min_age" class="form-control" 
+                                    placeholder="Min" min="0" value="{{ min_age if min_age is not none }}">
+                                <span class="input-group-text">–</span>
+                                <input type="number" name="max_age" class="form-control" 
+                                    placeholder="Max" min="0" value="{{ max_age if max_age is not none }}">
+                            </div>
+                        </div>
+
+                        <!-- Date Range -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-calendar-range me-1" style="color: var(--primary-teal);"></i>Date Range
+                            </label>
+                            <div class="row g-2">
+                                <div class="col">
+                                    <input type="date" name="start_date" class="form-control" 
+                                           placeholder="From" value="{{ start_date }}">
+                                </div>
+                                <div class="col-auto d-flex align-items-center">
+                                    <span class="text-muted">to</span>
+                                </div>
+                                <div class="col">
+                                    <input type="date" name="end_date" class="form-control" 
+                                           placeholder="To" value="{{ end_date }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{{ url_for('history') }}" class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Reset All
+                        </a>
+                        <button type="submit" class="btn btn-apply-filter rounded-pill px-4">
+                            <i class="bi bi-check-circle me-2"></i>Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- RESULTS TABLE -->
+    {% if entries %}
+    <div class="card border-0 shadow-sm glass-card">
+        <div class="card-header bg-transparent border-0 py-4">
+            <h5 class="mb-0 fw-bold" style="color: var(--primary-teal-darker);">
+                <i class="bi bi-table me-2"></i>Prediction Results
+            </h5>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 history-table">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-3">#</th>
+                            <th class="py-3">Rent (AED/yr)</th>
+                            <th class="py-3">Property</th>
+                            <th class="py-3">Location</th>
+                            <th class="py-3 text-center">Details</th>
+                            <th class="py-3">Date</th>
+                            <th class="py-3 text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for e in entries %}
+                        <tr class="history-row">
+                            <td class="px-4">
+                                <span class="badge rounded-pill" style="background: rgba(91, 155, 173, 0.1); color: var(--primary-teal-darker); font-weight: 600;">
+                                    #{{ e.id }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="rent-icon-wrapper me-3">
+                                        <i class="bi bi-currency-dollar"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="d-block rent-amount">
+                                            {{ "{:,.0f}".format(e.predicted_rent) }}
+                                        </strong>
+                                        <small class="text-muted">
+                                            {{ "{:,.0f}".format(e.predicted_rent / 12) }}/mo
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <strong class="d-block mb-1">{{ e.property_type }}</strong>
+                                <small class="text-muted">
+                                    <i class="bi bi-door-closed me-1"></i>{{ e.bedrooms }} beds ·
+                                    <i class="bi bi-droplet me-1"></i>{{ e.bathrooms }} baths
+                                </small>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill mb-1" style="background: linear-gradient(135deg, var(--primary-teal) 0%, var(--primary-teal-dark) 100%); color: white;">
+                                    {{ e.city }}
+                                </span><br>
+                                <small class="text-muted">
+                                    {{ e.location[:25] }}{% if e.location and e.location|length > 25 %}...{% endif %}
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex flex-column gap-1 align-items-center">
+                                    <span class="badge rounded-pill" style="background: rgba(91, 155, 173, 0.1); color: var(--primary-teal-darker);">
+                                        {{ e.area }} sqft
+                                    </span>
+                                    <span class="badge rounded-pill" style="background: rgba(76, 175, 80, 0.1); color: #2e7d32;">
+                                        {{ e.furnishing }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar3 me-1"></i>
+                                    {{ e.created_at.strftime("%d %b %Y") if e.created_at else 'N/A' }}<br>
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ e.created_at.strftime("%H:%M") if e.created_at else '' }}
+                                </small>
+                            </td>
+                            <td class="text-end pe-4">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal{{ e.id }}">
+                                    <i class="bi bi-trash me-1"></i>Delete
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAGINATION -->
+        <div class="card-footer bg-transparent border-0 py-4">
+            <nav aria-label="Pagination">
+                <ul class="pagination justify-content-center mb-3">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link rounded-pill me-2"
+                               href="{{ url_for('history', page=pagination.prev_num,
+                                                sort_by=sort_by, order=order,
+                                                city=city_filter, furnishing=furnishing_filter,
+                                                property_type=type_filter,
+                                                min_beds=min_beds, max_beds=max_beds,
+                                                min_area=min_area, max_area=max_area,
+                                                start_date=start_date, end_date=end_date) }}">
+                                <i class="bi bi-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1,
+                                                      left_current=1, right_current=2) %}
+                        {% if p %}
+                            <li class="page-item {{ 'active' if p == pagination.page }}">
+                                <a class="page-link rounded-pill mx-1"
+                                   href="{{ url_for('history', page=p,
+                                                    sort_by=sort_by, order=order,
+                                                    city=city_filter, furnishing=furnishing_filter,
+                                                    property_type=type_filter,
+                                                    min_beds=min_beds, max_beds=max_beds,
+                                                    min_area=min_area, max_area=max_area,
+                                                    start_date=start_date, end_date=end_date) }}">
+                                    {{ p }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link rounded-pill ms-2"
+                               href="{{ url_for('history', page=pagination.next_num,
+                                                sort_by=sort_by, order=order,
+                                                city=city_filter, furnishing=furnishing_filter,
+                                                property_type=type_filter,
+                                                min_beds=min_beds, max_beds=max_beds,
+                                                min_area=min_area, max_area=max_area,
+                                                start_date=start_date, end_date=end_date) }}">
+                                Next <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+            <div class="text-center">
+                <small class="text-muted">
+                    Showing
+                    <strong>{{ ((pagination.page - 1) * pagination.per_page) + 1 }}</strong>
+                    –
+                    <strong>{{ pagination.page * pagination.per_page
+                       if pagination.page * pagination.per_page < pagination.total
+                       else pagination.total }}</strong>
+                    of <strong>{{ pagination.total }}</strong> predictions
+                </small>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+
+    <div class="card border-0 shadow-sm text-center py-5">
+        <div class="card-body py-5">
+            <div class="mb-4">
+                <i class="bi bi-inbox" style="font-size: 5rem; color: rgba(91, 155, 173, 0.3);"></i>
+            </div>
+            <h3 class="fw-bold mb-3" style="color: var(--primary-teal-darker);">No Predictions Found</h3>
+            <p class="text-muted mb-4 fs-5">
+                Start by creating your first rental prediction to see your history here.
+            </p>
+            <a href="{{ url_for('index_page') }}" class="btn btn-lg rounded-pill px-5">
+                <i class="bi bi-plus-circle me-2"></i>Create First Prediction
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if entries %}
+    <!-- DELETE MODALS (kept outside the main card to avoid z-index issues) -->
+    {% for e in entries %}
+    <div class="modal fade" id="deleteModal{{ e.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content rounded-4 shadow">
+                <div class="modal-header border-0">
+                    <h6 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Confirm Delete
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body text-center">
+                    <p class="mb-1">Delete prediction <strong>#{{ e.id }}</strong>?</p>
+                    <small class="text-muted">This action cannot be undone</small>
+                </div>
+
+                <div class="modal-footer border-0 justify-content-center gap-2">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <form method="POST" action="{{ url_for('remove') }}" style="display: inline;">
+                         <input type="hidden" name="id" value="{{ e.id }}">
+                        <input type="hidden" name="source" value="history">
+                        <button type="submit" class="btn btn-danger rounded-pill">
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+{% endblock %}
