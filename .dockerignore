@@ -1,0 +1,13 @@
+NEW_CA1_ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+.env
+*.ipynb
+*.csv
+*.xlsx
+Model/
+test/
