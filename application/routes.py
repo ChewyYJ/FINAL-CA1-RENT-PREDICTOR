@@ -1,12 +1,19 @@
 from application import app, db
 from flask import render_template, request, flash, redirect, url_for
 from application.forms import PredictionForm, get_location_choices
-from application.models import Prediction
+# user auth
+from application.models import User, Prediction
 from application.predictor import preprocess_and_predict
 from datetime import datetime
 from application.forms import get_location_choices
-
-
+# user auth imports 
+from application.auth_forms import LoginForm, RegisterForm
+from flask_login import (
+    login_user,
+    logout_user,
+    login_required,
+    current_user
+)
 
 @app.route("/")
 @app.route("/index")
@@ -21,6 +28,12 @@ def index_page():
 
     # 2) Base query (newest first)
     query = db.select(Prediction).order_by(Prediction.id.desc())
+    
+    # Onlt show current user's predictions if logged in
+    if current_user.is_authenticated:
+        query = query.where(Prediction.user_id == current_user.id)
+    else:
+        query = query.where(Prediction.user_id.is_(None))
 
     # 3) Paginate
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
@@ -40,64 +53,6 @@ def index_page():
     )
 
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    form = PredictionForm()
-    locations = get_location_choices()
-
-    if form.validate_on_submit():
-        # 1) Get data from form
-        area = form.area_in_sqft.data
-        beds = form.beds.data
-        baths = form.baths.data
-        age_days = form.age_of_listing_in_days.data
-        furnishing = form.furnishing.data
-        type_ = form.type.data
-        location = form.location.data
-        city = form.city.data
-
-        # 2) Build input dict for model
-        input_data = {
-            "Area_in_sqft": area,
-            "Beds": beds,
-            "Baths": baths,
-            "Age_of_listing_in_days": age_days,
-            "Furnishing": furnishing,
-            "Type": type_,
-            "Location": location,
-            "City": city,
-        }
-
-        try:
-            # 3) Call ML pipeline
-            predicted_rent = preprocess_and_predict(input_data)
-
-            # 4) Save to DB
-            new_entry = Prediction(
-                area=area,
-                bedrooms=beds,
-                bathrooms=baths,
-                furnishing=furnishing,
-                age_of_listing=age_days,
-                property_type=type_,
-                city=city,
-                location=location,
-                predicted_rent=predicted_rent,
-                created_at=datetime.utcnow(),
-            )
-
-            add_entry(new_entry)
-
-            # Flash message to trigger toast notification
-            flash("prediction_success", "success")
-
-        except Exception as error:
-            db.session.rollback()
-            flash(f"Error during prediction: {error}", "danger")
-    else:
-        flash("Error, cannot proceed with prediction", "danger")
-
-    return redirect(url_for("index_page", _anchor="history-card"))
 
 
 def add_entry(new_entry):
@@ -113,19 +68,41 @@ def add_entry(new_entry):
 
 def get_entries():
     try:
-        entries = db.session.execute(
-            db.select(Prediction).order_by(Prediction.id.desc())
-        ).scalars().all()
+        query = db.select(Prediction).order_by(Prediction.id.desc())
+
+        if current_user.is_authenticated:
+            query = query.where(Prediction.user_id == current_user.id)
+
+        entries = db.session.execute(query).scalars().all()
         return entries
     except Exception as error:
         db.session.rollback()
         flash(str(error), "danger")
         return []
 
+
+def remove_entry(prediction_id):
+    if not current_user.is_authenticated:
+        return
+
+    pred = Prediction.query.filter_by(
+        id=prediction_id,
+        user_id=current_user.id
+    ).first()
+
+    if pred:
+        db.session.delete(pred)
+        db.session.commit()
+        flash("Prediction deleted successfully.", "success")
+    else:
+        flash("Prediction not found or does not belong to you.", "warning")
+
+
 @app.route("/remove", methods=["POST"])
+@login_required
 def remove():
-    prediction_id = request.form.get("id")           
-    source = request.form.get("source", "index")    
+    prediction_id = request.form.get("id")
+    source = request.form.get("source", "index")  # 'index' or 'history'
 
     if not prediction_id:
         flash("Unable to delete: missing prediction id.", "danger")
@@ -141,19 +118,8 @@ def remove():
         return redirect(url_for("index_page", _anchor="history-card"))
 
 
-def remove_entry(id):
-    try:
-        entry = db.get_or_404(Prediction, id)
-        db.session.delete(entry)
-        db.session.commit()
-    except Exception as error:
-        db.session.rollback()
-        flash(str(error), "danger")
-        return 0
-
-
-
 @app.route("/history")
+@login_required
 def history():
     form = PredictionForm()
 
@@ -198,7 +164,11 @@ def history():
 
     # ---------- base query ----------
     query = db.select(Prediction)
-
+    # limit to current user's predictions if logged in
+    if current_user.is_authenticated:
+        query = query.where(Prediction.user_id == current_user.id)
+    else:
+        query = query.where(Prediction.user_id.is_(None))
     # ---------- date range filter ----------
     try:
         if start_date_str:
@@ -311,3 +281,125 @@ def history():
         min_age=min_age,
         max_age=max_age
     )
+    
+# Routes for user registration and login 
+@app.route("/predict", methods=["POST"])
+def predict():
+    form = PredictionForm()
+    locations = get_location_choices()
+
+    if form.validate_on_submit():
+        # 1) Get data from form
+        area = form.area_in_sqft.data
+        beds = form.beds.data
+        baths = form.baths.data
+        age_days = form.age_of_listing_in_days.data
+        furnishing = form.furnishing.data
+        type_ = form.type.data
+        location = form.location.data
+        city = form.city.data
+
+        # 2) Build input dict for model
+        input_data = {
+            "Area_in_sqft": area,
+            "Beds": beds,
+            "Baths": baths,
+            "Age_of_listing_in_days": age_days,
+            "Furnishing": furnishing,
+            "Type": type_,
+            "Location": location,
+            "City": city,
+        }
+
+        try:
+            # 3) Call ML pipeline
+            predicted_rent = preprocess_and_predict(input_data)
+
+            # 4) Save to DB
+            new_entry = Prediction(
+                area=area,
+                bedrooms=beds,
+                bathrooms=baths,
+                furnishing=furnishing,
+                age_of_listing=age_days,
+                property_type=type_,
+                city=city,
+                location=location,
+                predicted_rent=predicted_rent,
+                created_at=datetime.utcnow(),
+                user_id=current_user.id if current_user.is_authenticated else None
+            )
+
+            add_entry(new_entry)
+
+            flash("prediction_success", "success")
+
+        except Exception as error:
+            db.session.rollback()
+            flash(f"Error during prediction: {error}", "danger")
+    else:
+        flash("Error, cannot proceed with prediction", "danger")
+
+    return redirect(url_for("index_page", _anchor="history-card"))
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    # If already logged in, no need to register again
+    if current_user.is_authenticated:
+        return redirect(url_for("index_page"))
+
+    form = RegisterForm()
+
+    if form.validate_on_submit():
+        # Check if username or email already exists
+        existing_username = User.query.filter_by(username=form.username.data).first()
+        existing_email = User.query.filter_by(email=form.email.data).first()
+
+        if existing_username:
+            flash("Username is already taken. Please choose another.", "danger")
+        elif existing_email:
+            flash("Email is already registered. Please log in instead.", "danger")
+        else:
+            # Create new user
+            user = User(
+                username=form.username.data,
+                email=form.email.data
+            )
+            user.set_password(form.password.data)
+
+            db.session.add(user)
+            db.session.commit()
+
+            flash("Account created successfully! Please log in.", "success")
+            return redirect(url_for("login"))
+
+    return render_template("auth/register.html", form=form)
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        # look up by email
+        user = User.query.filter_by(email=form.email.data).first()
+
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember.data)
+            flash("Logged in successfully.", "success")
+
+            next_page = request.args.get("next")
+            return redirect(next_page or url_for("index_page"))
+        else:
+            flash("Invalid email or password.", "danger")
+
+    return render_template("auth/login.html", form=form)
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("You have been logged out.", "info")
+    return redirect(url_for("index_page"))

@@ -40,6 +40,24 @@
 </head>
 <body>
 
+    <!-- FLASH MESSAGES -->
+    {% if request.endpoint != 'index_page' %}
+    {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 3000;">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show shadow"
+                role="alert"
+                style="min-width: 280px; border-left: 4px solid var(--primary-teal);">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+    {% endif %}
+
 
     {% include "includes/nav.html" %}
 
@@ -56,6 +74,18 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     {% block extra_js %}{% endblock %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // auto dismiss alerts after 6 seconds
+            setTimeout(function () {
+                document.querySelectorAll(".alert").forEach(function (alert) {
+                    let bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 6000);
+        });
+    </script>
+
 </body>
 </html>
 
