@@ -12,9 +12,6 @@ instance/
 # Jupyter
 .ipynb_checkpoints/
 
-# Large original models (too big for Git)
-Model/best_model.pkl
-Model/best_model_compressed.pkl.gz
 
 # Optional: logs
 *.log
