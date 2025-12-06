@@ -1,22 +1,23 @@
-# Dockerfile at project root
-FROM mybase
+# Base image (same as mybase)
+FROM python:3.11-slim
 
-# 1. Workdir inside container
+# Install system packages
+RUN apt-get update -y && apt-get install -y build-essential
+
+# Set working directory
 WORKDIR /app-docker
 
-# 2. Copy and install dependencies
-COPY requirements.txt requirements.txt
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python packages
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# 3. Copy the rest of your project
+# Copy the whole project
 COPY . .
 
-# 4. Flask config
-ENV FLASK_APP=application
-ENV FLASK_ENV=production
+# Expose Render’s required port
+EXPOSE 10000
 
-# 5. Expose port 5000
-EXPOSE 5000
-
-# 6. Run Flask app 
-CMD ["python3", "-m", "flask", "run", "--host=0.0.0.0"]
+# Start the app using Gunicorn
+CMD ["gunicorn", "-b", "0.0.0.0:10000", "wsgi:app"]
