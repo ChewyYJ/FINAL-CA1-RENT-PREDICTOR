@@ -405,6 +405,8 @@
 
         <form id="deleteForm" method="POST" action="{{ url_for('remove') }}">
           <input type="hidden" name="id" id="deleteEntryId">
+            <input type="hidden" name="source" value="index">
+
           <button type="submit" class="btn btn-danger">Delete</button>
         </form>
       </div>
