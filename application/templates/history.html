@@ -73,18 +73,22 @@
                                 <i class="bi bi-sort-down me-2"></i>Sort Options
                             </h6>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-funnel me-1"></i>Sort by
-                            </label>
-                            <select name="sort_by" class="form-select">
-                                <option value="created_at" {{ 'selected' if sort_by == 'created_at' }}>Date Created</option>
-                                <option value="rent" {{ 'selected' if sort_by == 'rent' }}>Rent Amount</option>
-                                <option value="area" {{ 'selected' if sort_by == 'area' }}>Area (sqft)</option>
-                                <option value="beds" {{ 'selected' if sort_by == 'beds' }}>Bedrooms</option>
-                                <option value="city" {{ 'selected' if sort_by == 'city' }}>City</option>
-                            </select>
-                        </div>
+                       <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-funnel me-1"></i>Sort by
+                        </label>
+                        <select name="sort_by" class="form-select">
+                            <option value="created_at" {{ 'selected' if sort_by == 'created_at' }}>Date Created</option>
+                            <option value="rent" {{ 'selected' if sort_by == 'rent' }}>Rent Amount</option>
+                            <option value="area" {{ 'selected' if sort_by == 'area' }}>Area (sqft)</option>
+                            <option value="beds" {{ 'selected' if sort_by == 'beds' }}>Bedrooms</option>
+                            <option value="baths" {{ 'selected' if sort_by == 'baths' }}>Bathrooms</option>
+                            <option value="age" {{ 'selected' if sort_by == 'age' }}>Age of Listing</option>
+                            <option value="city" {{ 'selected' if sort_by == 'city' }}>City (A-Z)</option>
+                            <option value="property_type" {{ 'selected' if sort_by == 'property_type' }}>Property Type</option>
+                            <option value="furnishing" {{ 'selected' if sort_by == 'furnishing' }}>Furnishing</option>
+                        </select>
+                    </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-arrow-down-up me-1"></i>Order
@@ -265,61 +269,89 @@
                         <tr>
                             <th class="px-4 py-3">#</th>
                             <th class="py-3">Rent (AED/yr)</th>
-                            <th class="py-3">Property</th>
+                            <th class="py-3">Area</th>
+                            <th class="py-3">Beds</th>
+                            <th class="py-3">Baths</th>
+                            <th class="py-3">Furnishing</th>
                             <th class="py-3">Location</th>
-                            <th class="py-3 text-center">Details</th>
-                            <th class="py-3">Date</th>
+                            <th class="py-3">City</th>
+                            <th class="py-3">Age (days)</th>
+                            <th class="py-3">Type</th>
+                            <th class="py-3">Created</th>
                             <th class="py-3 text-end pe-4">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for e in entries %}
                         <tr class="history-row">
+                            <!-- ID -->
                             <td class="px-4">
                                 <span class="badge rounded-pill" style="background: rgba(91, 155, 173, 0.1); color: var(--primary-teal-darker); font-weight: 600;">
                                     #{{ e.id }}
                                 </span>
                             </td>
+                            
+                            <!-- Rent -->
                             <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="rent-icon-wrapper me-3">
-                                        <i class="bi bi-currency-dollar"></i>
-                                    </div>
-                                    <div>
-                                        <strong class="d-block rent-amount">
-                                            {{ "{:,.0f}".format(e.predicted_rent) }}
-                                        </strong>
-                                        <small class="text-muted">
-                                            {{ "{:,.0f}".format(e.predicted_rent / 12) }}/mo
-                                        </small>
-                                    </div>
+                                <div>
+                                    <strong class="d-block rent-amount">
+                                        {{ "{:,.0f}".format(e.predicted_rent) }}
+                                    </strong>
+                                    <small class="text-muted">
+                                        {{ "{:,.0f}".format(e.predicted_rent / 12) }}/mo
+                                    </small>
                                 </div>
                             </td>
+                            
+                            <!-- Area -->
                             <td>
-                                <strong class="d-block mb-1">{{ e.property_type }}</strong>
+                                <span class="badge rounded-pill" style="background: rgba(91, 155, 173, 0.1); color: var(--primary-teal-darker);">
+                                    {{ e.area }} sqft
+                                </span>
+                            </td>
+                            
+                            <!-- Beds -->
+                            <td>
+                                <i class="bi bi-door-closed me-1" style="color: var(--primary-teal);"></i>{{ e.bedrooms }}
+                            </td>
+                            
+                            <!-- Baths -->
+                            <td>
+                                <i class="bi bi-droplet me-1" style="color: var(--primary-teal);"></i>{{ e.bathrooms }}
+                            </td>
+                            
+                            <!-- Furnishing -->
+                            <td>
+                                <span class="badge rounded-pill" style="background: rgba(76, 175, 80, 0.1); color: #2e7d32;">
+                                    {{ e.furnishing }}
+                                </span>
+                            </td>
+                            
+                            <!-- Location -->
+                            <td>
                                 <small class="text-muted">
-                                    <i class="bi bi-door-closed me-1"></i>{{ e.bedrooms }} beds ·
-                                    <i class="bi bi-droplet me-1"></i>{{ e.bathrooms }} baths
+                                    {{ e.location[:20] }}{% if e.location and e.location|length > 20 %}...{% endif %}
                                 </small>
                             </td>
+                            
+                            <!-- City -->
                             <td>
-                                <span class="badge rounded-pill mb-1" style="background: linear-gradient(135deg, var(--primary-teal) 0%, var(--primary-teal-dark) 100%); color: white;">
+                                <span class="badge rounded-pill" style="background: linear-gradient(135deg, var(--primary-teal) 0%, var(--primary-teal-dark) 100%); color: white;">
                                     {{ e.city }}
-                                </span><br>
-                                <small class="text-muted">
-                                    {{ e.location[:25] }}{% if e.location and e.location|length > 25 %}...{% endif %}
-                                </small>
+                                </span>
                             </td>
-                            <td class="text-center">
-                                <div class="d-flex flex-column gap-1 align-items-center">
-                                    <span class="badge rounded-pill" style="background: rgba(91, 155, 173, 0.1); color: var(--primary-teal-darker);">
-                                        {{ e.area }} sqft
-                                    </span>
-                                    <span class="badge rounded-pill" style="background: rgba(76, 175, 80, 0.1); color: #2e7d32;">
-                                        {{ e.furnishing }}
-                                    </span>
-                                </div>
+                            
+                            <!-- Age of Listing -->
+                            <td>
+                                <span class="badge bg-light text-dark">{{ e.age_of_listing }}</span>
                             </td>
+                            
+                            <!-- Property Type -->
+                            <td>
+                                <small class="fw-semibold">{{ e.property_type }}</small>
+                            </td>
+                            
+                            <!-- Created Date -->
                             <td>
                                 <small class="text-muted">
                                     <i class="bi bi-calendar3 me-1"></i>
@@ -328,6 +360,8 @@
                                     {{ e.created_at.strftime("%H:%M") if e.created_at else '' }}
                                 </small>
                             </td>
+                            
+                            <!-- Action -->
                             <td class="text-end pe-4">
                                 <button type="button"
                                         class="btn btn-sm btn-outline-danger rounded-pill px-3"
@@ -426,7 +460,7 @@
             <p class="text-muted mb-4 fs-5">
                 Start by creating your first rental prediction to see your history here.
             </p>
-            <a href="{{ url_for('index_page') }}" class="btn btn-lg rounded-pill px-5">
+            <a href="{{ url_for('index_page') }}" class="btn predict-btn-main btn-lg rounded-pill px-5">
                 <i class="bi bi-plus-circle me-2"></i>Create First Prediction
             </a>
         </div>
@@ -435,7 +469,7 @@
 </div>
 
 {% if entries %}
-    <!-- DELETE MODALS (kept outside the main card to avoid z-index issues) -->
+    <!-- DELETE MODALS -->
     {% for e in entries %}
     <div class="modal fade" id="deleteModal{{ e.id }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -457,7 +491,7 @@
                         Cancel
                     </button>
                     <form method="POST" action="{{ url_for('remove') }}" style="display: inline;">
-                         <input type="hidden" name="id" value="{{ e.id }}">
+                        <input type="hidden" name="id" value="{{ e.id }}">
                         <input type="hidden" name="source" value="history">
                         <button type="submit" class="btn btn-danger rounded-pill">
                             <i class="bi bi-trash me-1"></i>Delete
