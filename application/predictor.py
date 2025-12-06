@@ -1,8 +1,6 @@
 # load the model and preprocessing objects
 import os
 import joblib
-import lzma  # ← Added for decompression
-import pickle  # ← Added for loading from lzma
 import numpy as np
 import pandas as pd
 from flask import current_app
@@ -15,6 +13,7 @@ _categorical_cols = None
 _continuous_cols = None
 _feature_columns = None
 _furnish_map = None
+
 
 def load_model_components():
     """Load all model components once when app starts."""
@@ -31,19 +30,17 @@ def load_model_components():
 
         print("Loading model components from:", MODEL_DIR)
 
-        # -------- Load compressed model with lzma --------
-        model_path = os.path.join(MODEL_DIR, "best_model_compressed_lzma.pkl")  # ← Updated filename
+        # -------- Load model with joblib (no pickle/lzma) --------
+        model_path = os.path.join(MODEL_DIR, "final_model_compressed_v2.joblib")
 
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model file not found: {model_path}")
 
-        # Load compressed model
-        print("Decompressing model (this may take a moment)...")
-        with lzma.open(model_path, 'rb') as f:
-            _model = pickle.load(f)
-        print("✓ Loaded and decompressed model from:", model_path)
+        print("Loading model (this may take a moment)...")
+        _model = joblib.load(model_path)
+        print("✓ Loaded model from:", model_path)
         
-        # Load all other components with joblib (these aren't compressed)
+        # Load all other components with joblib
         _scaler = joblib.load(os.path.join(MODEL_DIR, "scaler.pkl"))
         _encoder = joblib.load(os.path.join(MODEL_DIR, "encoder.pkl"))
         _categorical_cols = joblib.load(os.path.join(MODEL_DIR, "categorical_cols.pkl"))
@@ -56,6 +53,7 @@ def load_model_components():
     except Exception as e:
         print(f"Error loading model components: {e}")
         raise
+
 
 def preprocess_and_predict(input_data):
     """
