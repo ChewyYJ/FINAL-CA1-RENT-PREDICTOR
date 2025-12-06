@@ -4,6 +4,8 @@ import pickle
 import numpy as np
 import pandas as pd
 from flask import current_app
+import lzma
+ 
 
 # Global variables to store loaded components
 _model = None
@@ -20,13 +22,25 @@ def load_model_components():
     
     if _model is not None:
         return  # Already loaded
-    
+
     try:
-        MODEL_DIR = current_app.config.get('MODEL_DIR', os.path.join(os.path.dirname(__file__), '..', 'Model'))
-        
+        MODEL_DIR = current_app.config.get(
+            'MODEL_DIR',
+            os.path.join(os.path.dirname(__file__), '..', 'Model')
+        )
+
         print("Loading model components from:", MODEL_DIR)
-        
-        _model = pickle.load(open(os.path.join(MODEL_DIR, "best_model.pkl"), "rb"))
+
+        # -------- Load ONLY compressed model --------
+        model_path = os.path.join(MODEL_DIR, "best_model_compressed_lzma.pkl")
+
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Compressed model file not found: {model_path}")
+
+        with lzma.open(model_path, "rb") as f:
+            _model = pickle.load(f)
+
+        print("Loaded COMPRESSED model from:", model_path)
         _scaler = pickle.load(open(os.path.join(MODEL_DIR, "scaler.pkl"), "rb"))
         _encoder = pickle.load(open(os.path.join(MODEL_DIR, "encoder.pkl"), "rb"))
         _categorical_cols = pickle.load(open(os.path.join(MODEL_DIR, "categorical_cols.pkl"), "rb"))
