@@ -4,7 +4,7 @@ from application.forms import PredictionForm, get_location_choices
 from application.models import Prediction
 from application.predictor import preprocess_and_predict
 from datetime import datetime
-
+ 
 
 
 @app.route("/")
@@ -12,17 +12,31 @@ from datetime import datetime
 @app.route("/home")
 def index_page():
     form = PredictionForm()
-    locations = get_location_choices() 
-    entries = get_entries()            
+    locations = get_location_choices()
+
+    # 1) Read page number from query string (?page=2 etc.)
+    page = request.args.get("page", 1, type=int)
+    per_page = 5   # or 10 if you prefer
+
+    # 2) Base query (newest first)
+    query = db.select(Prediction).order_by(Prediction.id.desc())
+
+    # 3) Paginate
+    pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
+    entries = pagination.items
+
+    # 4) True latest prediction (for big card + "Latest" badge)
+    latest = db.session.execute(query.limit(1)).scalars().first()
 
     return render_template(
         "index.html",
         title="Enter Property Details",
         form=form,
-        entries=entries,        
-        locations=locations  
+        entries=entries,          
+        pagination=pagination,    
+        latest=latest,            
+        locations=locations
     )
-
 
 
 @app.route("/predict", methods=["POST"])
@@ -73,7 +87,8 @@ def predict():
 
             add_entry(new_entry)
 
-            flash(f"Predicted annual rent: {predicted_rent:,.2f} AED", "success")
+            # Flash message to trigger toast notification
+            flash("prediction_success", "success")
 
         except Exception as error:
             db.session.rollback()
@@ -81,8 +96,7 @@ def predict():
     else:
         flash("Error, cannot proceed with prediction", "danger")
 
-    return redirect(url_for("index_page"))
-
+    return redirect(url_for("index_page", _anchor="history-card"))
 
 
 def add_entry(new_entry):
@@ -106,3 +120,22 @@ def get_entries():
         db.session.rollback()
         flash(str(error), "danger")
         return []
+
+@app.route("/remove", methods=["POST"])
+def remove():
+    form = PredictionForm()
+    id = request.form["id"]
+    remove_entry(id)
+    return redirect(url_for("index_page", _anchor="history-card"))
+
+
+def remove_entry(id):
+    try:
+        entry = db.get_or_404(Prediction, id)
+        db.session.delete(entry)
+        db.session.commit()
+    except Exception as error:
+        db.session.rollback()
+        flash(str(error), "danger")
+        return 0
+
