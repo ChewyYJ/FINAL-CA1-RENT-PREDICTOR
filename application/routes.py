@@ -332,7 +332,7 @@ def predict():
 
             add_entry(new_entry)
 
-            flash("prediction_success", "success")
+            flash("Prediction successful!", "success")
 
         except Exception as error:
             db.session.rollback()
@@ -388,6 +388,7 @@ def login():
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember.data)
             flash("Logged in successfully.", "success")
+            
 
             next_page = request.args.get("next")
             return redirect(next_page or url_for("index_page"))
@@ -403,3 +404,9 @@ def logout():
     logout_user()
     flash("You have been logged out.", "info")
     return redirect(url_for("index_page"))
+
+
+
+
+
+
