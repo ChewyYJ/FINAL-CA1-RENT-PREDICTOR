@@ -18,7 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
 
 <style>
-    /* Only keep this because it uses Jinja2 template syntax */
+    
     body::before {
         content: '';
         position: fixed;
@@ -48,7 +48,15 @@
         <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm"
             role="alert"
             style="min-width: 320px; border-left: 4px solid var(--primary-teal); font-weight: 500;">
-            <i class="bi bi-check-circle-fill me-2"></i>
+            
+            <!-- Dynamic icon based on category -->
+            <i class="bi 
+                {% if category == 'success' %}bi-check-circle-fill
+                {% elif category == 'danger' %}bi-exclamation-triangle-fill
+                {% elif category == 'warning' %}bi-exclamation-circle-fill
+                {% elif category == 'info' %}bi-info-circle-fill
+                {% else %}bi-check-circle-fill{% endif %} me-2"></i>
+            
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -57,8 +65,6 @@
   </div>
   {% endif %}
 {% endwith %}
-
-
 
 
     {% include "includes/nav.html" %}

@@ -33,19 +33,31 @@ def get_location_choices():
 class PredictionForm(FlaskForm):
     area_in_sqft = FloatField(
         "Area (sqft)",
-        validators=[DataRequired(), NumberRange(min=100)]
+        validators=[
+            DataRequired(message="Area is required"),
+            NumberRange(min=300, max=70000, message="Area must be between 300 and 70,000 sqft")
+        ]
     )
     beds = IntegerField(
         "Beds",
-        validators=[DataRequired(), NumberRange(min=0)]
+        validators=[
+            DataRequired(message="Number of beds is required"),
+            NumberRange(min=0, max=12, message="Beds must be between 0 and 12")
+        ]
     )
     baths = IntegerField(
         "Baths",
-        validators=[DataRequired(), NumberRange(min=0)]
+        validators=[
+            DataRequired(message="Number of baths is required"),
+            NumberRange(min=0, max=10, message="Baths must be between 0 and 10")
+        ]
     )
     age_of_listing_in_days = IntegerField(
         "Age of listing (days)",
-        validators=[DataRequired(), NumberRange(min=0)]
+        validators=[
+            DataRequired(message="Age of listing is required"),
+            NumberRange(min=0, max=3650, message="Age must be between 0 and 3,650 days")
+        ]
     )
     furnishing = SelectField(
         "Furnishing",

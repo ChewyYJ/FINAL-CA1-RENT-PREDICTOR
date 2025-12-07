@@ -911,3 +911,22 @@ footer {
     color: white;
     box-shadow: 0 4px 12px rgba(91, 155, 173, 0.3);
 }
+
+/* Results table history btn*/
+.history-btn {
+    background-color: var(--primary-teal);
+    color: white;
+    border-radius: 15px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.history-btn:hover {
+    background-color: white !important;
+    color: var(--primary-teal) !important;
+    border: 2px solid var(--primary-teal);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
