@@ -14,4 +14,8 @@ ENV PORT=10000
 EXPOSE 10000
 
 # Start with Gunicorn
-CMD ["gunicorn", "-b", "0.0.0.0:10000", "application:app"]
+CMD ["gunicorn",
+     "-b", "0.0.0.0:10000",
+     "-w", "1",
+     "--timeout", "120",
+     "application:app"]
