@@ -1,37 +1,47 @@
-# tests/conftest.py
+import json
+from datetime import datetime
+from unittest.mock import patch
+
 import pytest
 
-from application import app as flask_app, db
-from application.models import Prediction, User
+from application import app, db
+from application.models import User, Prediction
 
+
+# ===========================================================
+#  FIXTURES
+# ===========================================================
 
 @pytest.fixture
-def app():
+def app_fixture():
     """
-    Test version of the Flask app.
-
-    - Uses an in-memory SQLite DB (does NOT touch your real DB file)
-    - Disables CSRF so WTForms doesn't block POSTs
-    - Disables login requirement so we can call routes easily
+    Create a fresh app + in-memory DB for each test run.
+    Also disable CSRF so our form posts work in tests.
     """
-    flask_app.config.update(
+    app.config.update(
         TESTING=True,
         SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
         WTF_CSRF_ENABLED=False,
-        LOGIN_DISABLED=True,      # flask-login: skip @login_required in tests
+        LOGIN_DISABLED=False,   # keep login_required active
     )
 
-    with flask_app.app_context():
-        db.drop_all()
-        db.create_all()
-        yield flask_app
-        db.session.remove()
-        db.drop_all()
+    ctx = app.app_context()
+    ctx.push()
+
+    db.drop_all()
+    db.create_all()
+
+    yield app
+
+    db.session.remove()
+    db.drop_all()
+    ctx.pop()
 
 
 @pytest.fixture
-def client(app):
+def client(app_fixture):
     """
-    Flask test client for making HTTP calls in tests.
+    Flask test client, depends on app_fixture so that context + DB exist.
     """
-    return app.test_client()
+    return app_fixture.test_client()
+

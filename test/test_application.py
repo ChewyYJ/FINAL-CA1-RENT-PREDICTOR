@@ -9,44 +9,6 @@ from application.models import User, Prediction
 
 
 # ===========================================================
-#  FIXTURES
-# ===========================================================
-
-@pytest.fixture
-def app_fixture():
-    """
-    Create a fresh app + in-memory DB for each test run.
-    Also disable CSRF so our form posts work in tests.
-    """
-    app.config.update(
-        TESTING=True,
-        SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
-        WTF_CSRF_ENABLED=False,
-        LOGIN_DISABLED=False,   # keep login_required active
-    )
-
-    ctx = app.app_context()
-    ctx.push()
-
-    db.drop_all()
-    db.create_all()
-
-    yield app
-
-    db.session.remove()
-    db.drop_all()
-    ctx.pop()
-
-
-@pytest.fixture
-def client(app_fixture):
-    """
-    Flask test client, depends on app_fixture so that context + DB exist.
-    """
-    return app_fixture.test_client()
-
-
-# ===========================================================
 #  SMALL HELPERS
 # ===========================================================
 
@@ -454,9 +416,9 @@ def test_predict_accepts_valid_boundary_values(mock_predict, client):
     resp = client.post(
         "/predict",
         data={
-            "area_in_sqft": "300",   # must be string
-            "beds": 1,               # changed from 0
-            "baths": 1,              # changed from 0
+            "area_in_sqft": "300",    
+            "beds": 1,               
+            "baths": 1,               
             "age_of_listing_in_days": 7,
             "furnishing": "Unfurnished",
             "type": "Apartment",
@@ -736,7 +698,7 @@ def test_api_create_prediction(client, entrylist, capsys):
         assert "id" in body
         assert isinstance(body["id"], int)
         assert "predicted_rent" in body
-        # rent should be > 0 logically
+         
         assert body["predicted_rent"] > 0
 
 
