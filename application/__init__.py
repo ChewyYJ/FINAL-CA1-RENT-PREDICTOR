@@ -34,6 +34,6 @@ from application import routes
 
 # new method for SQLAlchemy version 3 onwards
 with app.app_context():
-    # db.drop_all()
+    db.drop_all()
     db.create_all()
     print('Created Database!')

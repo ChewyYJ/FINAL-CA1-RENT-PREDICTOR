@@ -14,6 +14,13 @@ from flask_login import (
     login_required,
     current_user
 )
+# timezone handling
+from datetime import datetime
+import pytz
+
+singapore_tz = pytz.timezone('Asia/Singapore')
+created_at = datetime.now(singapore_tz)
+
 
 @app.route("/")
 @app.route("/index")
@@ -24,7 +31,7 @@ def index_page():
 
     # 1) Read page number from query string (?page=2 etc.)
     page = request.args.get("page", 1, type=int)
-    per_page = 5   # or 10 if you prefer
+    per_page = 5    
 
     # 2) Base query (newest first)
     query = db.select(Prediction).order_by(Prediction.id.desc())
@@ -197,8 +204,8 @@ def history():
         query = query.where(Prediction.property_type == type_filter)
         print(f"Applied type filter: {type_filter}")
 
-    # Location filter (partial match) - BE CAREFUL WITH EMPTY STRINGS!
-    if location_filter and location_filter.strip():  # Added .strip() check
+    
+    if location_filter and location_filter.strip():  
         query = query.where(Prediction.location.ilike(f'%{location_filter}%'))
         print(f"Applied location filter: {location_filter}")
 
@@ -246,14 +253,14 @@ def history():
     sort_expr = sort_col.asc() if order == "asc" else sort_col.desc()
     query = query.order_by(sort_expr)
 
-    # DEBUG: Check query before pagination
+
     print(f"\nFinal query: {query}")
     
     # ---------- pagination ----------
     pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
     entries = pagination.items
     
-    # DEBUG: Check results
+
     print(f"Total items found: {pagination.total}")
     print(f"Items on this page: {len(entries)}")
     print("=" * 50)
@@ -287,7 +294,7 @@ def history():
 def predict():
     form = PredictionForm()
     locations = get_location_choices()
-
+    
     if form.validate_on_submit():
         # 1) Get data from form
         area = form.area_in_sqft.data
@@ -315,7 +322,11 @@ def predict():
             # 3) Call ML pipeline
             predicted_rent = preprocess_and_predict(input_data)
 
-            # 4) Save to DB
+            # 4) Get Singapore time
+            singapore_tz = pytz.timezone('Asia/Singapore')
+            created_at = datetime.now(singapore_tz)
+
+            # 5) Save to DB
             new_entry = Prediction(
                 area=area,
                 bedrooms=beds,
@@ -326,21 +337,46 @@ def predict():
                 city=city,
                 location=location,
                 predicted_rent=predicted_rent,
-                created_at=datetime.utcnow(),
+                created_at=created_at,
                 user_id=current_user.id if current_user.is_authenticated else None
             )
 
             add_entry(new_entry)
 
             flash("Prediction successful!", "success")
+            
+            # Success: go to history
+            return redirect(url_for("index_page", _anchor="history-card"))
 
         except Exception as error:
             db.session.rollback()
             flash(f"Error during prediction: {error}", "danger")
+            # Error: stay at form
+            return redirect(url_for("index_page", _anchor="predict-form"))
     else:
-        flash("Error, cannot proceed with prediction", "danger")
+        # Display detailed validation errors
+        if form.errors:
+            for field, errors in form.errors.items():
+                # Get user-friendly field names
+                field_labels = {
+                    'area_in_sqft': 'Area',
+                    'beds': 'Beds',
+                    'baths': 'Baths',
+                    'age_of_listing_in_days': 'Age of listing',
+                    'furnishing': 'Furnishing',
+                    'type': 'Property Type',
+                    'location': 'Location',
+                    'city': 'City'
+                }
+                field_name = field_labels.get(field, field)
+                
+                for error in errors:
+                    flash(f"{field_name}: {error}", "danger")
+        else:
+            flash("Error, cannot proceed with prediction", "danger")
 
-    return redirect(url_for("index_page", _anchor="history-card"))
+    # Validation error: stay at form
+    return redirect(url_for("index_page", _anchor="predict-form"))
 
 
 @app.route("/register", methods=["GET", "POST"])
