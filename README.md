@@ -1,93 +1,191 @@
-# CA1-DAAA2A21-P2415860-CHEWYEEJING-FINAL
+# UAE Rental Price Predictor
 
+**By Chew Yee Jing (P2415860)**
+**DAAA/FT/2A/21**
 
+This project is a Flask-based machine learning web application that predicts rental prices across the United Arab Emirates (UAE). It integrates a trained machine learning model, a responsive web interface, a prediction history database, server-side filtering, and full deployment using Docker on Render.
 
-## Getting started
+This project is submitted for CA1 and demonstrates dataset preprocessing, model training, Flask backend development, HTML/WTForms UI, unit testing, Git version control, and deployment.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+---
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## 1. Project Overview
 
-## Add your files
+The UAE Rental Price Predictor allows users to estimate rental prices by selecting key property attributes such as city, location, bedrooms, bathrooms, furnishing type, and area. The application processes the inputs, loads a trained ML model, and returns an estimated rental price.
 
-* [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+A prediction history page is included, featuring sorting, filtering (city, location, date range, rooms, area, etc.), and pagination. All predictions are stored in a SQLite database.
+
+The full application is containerised using Docker and deployed later on.
+
+---
+
+## 2. Features
+
+### Machine Learning
+
+* Trained using a dataset of approximately 73,000+ UAE rental listings.
+* Includes preprocessing with OneHotEncoder and StandardScaler.
+* Log transformation applied to stabilise target distribution.
+* Final model stored as `final_model_compressed_v2.joblib` after compressing the file to less than 100MB since github can only accept below 100MB.
+
+### Web Application (Flask)
+
+* Form-based prediction using WTForms.
+* Clean and responsive UI built with Bootstrap and custom CSS.
+* Prediction history stored in SQLite and displayed with filters and pagination.
+
+### Deployment
+
+* Dockerfile used for containerisation.
+* Details regarding Deployment will be stated more in the slides.
+
+### Testing
+
+* Pytest test suite included.
+* All 5 testing covered and also tested all the RESTFUL APIs used.
+(Unexpected Failure Testing, Validity Testing, Consistency Testing, Expected Failure Testing, Range testing)
+* 13 passing tests covering model loading, forms, routes, and database functions.
+
+---
+
+## 3. Machine Learning Model Details
+
+* Log transformation applied:
+
+```python
+y_train_log = np.log(y_train)
+```
+
+* Categoricals encoded with OneHotEncoder.
+* Numeric features scaled using StandardScaler.
+* Trained several versions of the model to optimise memory usage for deployment.
+
+I attempted to reduce the number of model parameters to fit Render’s 512 MB free-tier memory limit. However, this dropped model performance to approximately 70% accuracy. To avoid compromising prediction quality, I retained the stronger model, even though it occasionally triggers Render’s memory cap, which results in a 502 error. These attempts demonstrate my thought process for model selection and deployment constraints.
+
+---
+
+## 4. Folder Structure
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/2a21.2415860.chewyeejing-group/ca1-daaa2a21-p2415860-chewyeejing-final.git
-git branch -M main
-git push -uf origin main
+├── application/
+│   ├── __init__.py
+│   ├── routes.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── predictor.py
+│   ├── static/
+│   │   └── css/style.css
+│   ├── templates/
+│       ├── layout.html
+│       ├── index.html
+│       ├── history.html
+│       └── includes/
+│
+├── Model/
+│   └── model.pkl
+│
+├── Dockerfile
+├── requirements.txt
+├── app.py
+└── README.md
 ```
 
-## Integrate with your tools
+---
 
-* [Set up project integrations](https://gitlab.com/2a21.2415860.chewyeejing-group/ca1-daaa2a21-p2415860-chewyeejing-final/-/settings/integrations)
+## 5. Running the Application Locally
 
-## Collaborate with your team
+### Step 1: Create Virtual Environment
 
-* [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+```
+python -m venv NEW_CA1_ENV
+```
 
-## Test and Deploy
+### Step 2: Activate Environment
 
-Use the built-in continuous integration in GitLab.
+Windows:
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+```
+NEW_CA1_ENV\Scripts\activate
+```
 
-***
+### Step 3: Install Dependencies
 
-# Editing this README
+```
+pip install -r requirements.txt
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Step 4: Start Flask Server
 
-## Suggestions for a good README
+```
+flask run
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Local URL: `http://127.0.0.1:5000`
 
-## Name
-Choose a self-explaining name for your project.
+---
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## 6. Deployment on Render
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+* Application is containerised using a custom Dockerfile.
+* Render detects build and start commands automatically.
+* Gunicorn serves the Flask application in production.
+* Runs on assigned port 10000.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### Deployment Limitation
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Render’s free tier provides only 512 MB RAM.
+During heavy prediction tasks, the ML model and supporting libraries (pandas, scikit-learn) occasionally exceed this limit, which results in a 502 error. I explored downsizing the model and alternative platforms such as Heroku, but these also impose similar memory caps.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+---
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## 7. Branch Structure (SCRUM Workflow)
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+| Branch Name            | Purpose                                              |
+| ---------------------- | ---------------------------------------------------- |
+| branch1-ml-model       | Dataset preprocessing, training, exporting model.pkl |
+| branch2-basic-setup    | Flask project setup, application structure           |
+| branch3-prediction_ui  | WTForms prediction form and UI                       |
+| branch4-prediction_api | Prediction API endpoint and model integration        |
+| branch5-database       | Database setup, saving predictions, history page     |
+| branch6-enhancement    | Filtering, sorting, pagination, improved CSS         |
+| branch11-deployment    | Docker + Render deployment configuration             |
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+---
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## 8. Testing
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+Run test suite:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```
+python -m pytest
+```
 
-## License
-For open source projects, say how it is licensed.
+Expected output:
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+```
+30 passed 
+```
+
+Tests cover:
+
+* Form validation
+* Flask route responses
+* Prediction functionality
+* Database integration
+
+---
+
+## 9. Future Enhancements
+
+* Migrate to higher-memory hosting environment.
+* Add interactive visualisations for trends.
+
+---
+
+## 10. Author
+
+**Chew Yee Jing (P2415860)**
+Diploma in Applied AI & Analytics
+Singapore Polytechnic
+DAAA/FT/2A/21
+

@@ -30,7 +30,7 @@ def load_model_components():
 
         print("Loading model components from:", MODEL_DIR)
 
-        # -------- Load model with joblib (no pickle/lzma) --------
+        # -------- Load model with joblib --------
         model_path = os.path.join(MODEL_DIR, "final_model_compressed_v2.joblib")
 
         if not os.path.exists(model_path):

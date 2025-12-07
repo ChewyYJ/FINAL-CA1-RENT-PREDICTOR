@@ -1,5 +1,5 @@
 from application import app, db
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for, jsonify
 from application.forms import PredictionForm, get_location_choices
 # user auth
 from application.models import User, Prediction
@@ -446,3 +446,166 @@ def logout():
 
 
 
+
+
+# ==============================
+# REST API ENDPOINTS (CA1 PART 3)
+# ==============================
+
+@app.route("/api/predictions", methods=["POST"])
+def api_create_prediction():
+    """
+    REST API: Create a prediction.
+    - Expects JSON body with:
+      area, bedrooms, bathrooms, age_of_listing,
+      furnishing, property_type, city, location
+    - Calls ML model to get predicted_rent
+    - Saves to DB and returns JSON
+    """
+    data = request.get_json(silent=True) or {}
+
+    required_fields = [
+        "area",
+        "bedrooms",
+        "bathrooms",
+        "age_of_listing",
+        "furnishing",
+        "property_type",
+        "city",
+        "location",
+    ]
+
+    missing = [field for field in required_fields if field not in data]
+    if missing:
+        return jsonify({
+            "success": False,
+            "message": "Missing fields: " + ", ".join(missing)
+        }), 400
+
+    try:
+        # basic type conversion
+        area = float(data["area"])
+        bedrooms = int(data["bedrooms"])
+        bathrooms = int(data["bathrooms"])
+        age_of_listing = int(data["age_of_listing"])
+        furnishing = data["furnishing"]
+        property_type = data["property_type"]
+        city = data["city"]
+        location = data["location"]
+
+        # ========== Prepare input for ML model ==========
+        input_data = {
+            "Area_in_sqft": area,
+            "Beds": bedrooms,
+            "Baths": bathrooms,
+            "Age_of_listing_in_days": age_of_listing,
+            "Furnishing": furnishing,
+            "Type": property_type,
+            "Location": location,
+            "City": city,
+        }
+
+        # Call ML pipeline
+        predicted_rent = preprocess_and_predict(input_data)
+
+        # Current time in Singapore
+        singapore_tz = pytz.timezone("Asia/Singapore")
+        created_at = datetime.now(singapore_tz)
+
+        # Save to DB
+        new_pred = Prediction(
+            area=area,
+            bedrooms=bedrooms,
+            bathrooms=bathrooms,
+            furnishing=furnishing,
+            age_of_listing=age_of_listing,
+            property_type=property_type,
+            city=city,
+            location=location,
+            predicted_rent=predicted_rent,
+            created_at=created_at,
+            user_id=current_user.id if current_user.is_authenticated else None,
+        )
+
+        db.session.add(new_pred)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Prediction created successfully",
+            "id": new_pred.id,
+            "predicted_rent": float(predicted_rent),
+            "currency": "AED",
+            "created_at": created_at.isoformat()
+        }), 200
+
+    except (ValueError, TypeError) as e:
+        return jsonify({
+            "success": False,
+            "message": f"Invalid input values: {e}"
+        }), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "message": f"Unexpected server error: {e}"
+        }), 500
+
+
+@app.route("/api/predictions/<int:prediction_id>", methods=["GET"])
+def api_get_prediction(prediction_id):
+    """
+    REST API: Get a single prediction by id.
+    """
+    pred = Prediction.query.get(prediction_id)
+    if not pred:
+        return jsonify({
+            "success": False,
+            "message": "Prediction not found"
+        }), 404
+
+    return jsonify({
+        "success": True,
+        "item": {
+            "id": pred.id,
+            "area": pred.area,
+            "bedrooms": pred.bedrooms,
+            "bathrooms": pred.bathrooms,
+            "furnishing": pred.furnishing,
+            "age_of_listing": pred.age_of_listing,
+            "property_type": pred.property_type,
+            "city": pred.city,
+            "location": pred.location,
+            "predicted_rent": float(pred.predicted_rent),
+            "created_at": pred.created_at.isoformat() if pred.created_at else None,
+        }
+    }), 200
+
+
+@app.route("/api/predictions/<int:prediction_id>", methods=["DELETE"])
+def api_delete_prediction(prediction_id):
+    """
+    REST API: Delete a prediction by id.
+    Uses HTTP DELETE method (correct REST style).
+    """
+    pred = Prediction.query.get(prediction_id)
+    if not pred:
+        return jsonify({
+            "success": False,
+            "message": "Prediction not found"
+        }), 404
+
+    try:
+        db.session.delete(pred)
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "message": "Prediction deleted successfully",
+            "id": prediction_id
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "message": f"Error deleting prediction: {e}"
+        }), 500
