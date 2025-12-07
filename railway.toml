@@ -1,0 +1,8 @@
+[deploy]
+numReplicas = 1
+
+[build]
+builder = "nixpacks"
+
+[deploy.env]
+NIXPACKS_MEMORY_MB = "1024"
